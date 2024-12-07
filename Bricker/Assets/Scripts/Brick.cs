@@ -33,10 +33,11 @@ public class Brick : MonoBehaviour
 
     private void TakeDamage()
     {
-        if (!unbreakable)
+        if (unbreakable)
         {
             return;
         }
+
         Health--;
 
         if (Health <= 0)

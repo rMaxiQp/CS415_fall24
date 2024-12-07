@@ -1,10 +1,13 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Ball : MonoBehaviour
 {
     public Rigidbody2D Rigidbody { get; private set; }
 
-    public float speed = 500f;
+    public float speed;
+
+    private Vector2 _velocity;
 
     private void Awake()
     {
@@ -13,16 +16,38 @@ public class Ball : MonoBehaviour
 
     private void Start()
     {
-        // Call SetRandomTrajectory after 1 second
-        Invoke(nameof(SetRandomTrajectory), 1f);
+        Vector2 mouse = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 pos = transform.position;
+        Vector2 direction = (mouse - pos).normalized;
+
+        _velocity = direction * speed;
+        Rigidbody.linearVelocity = _velocity;
+        gameObject.tag = "Ball";
     }
 
-    private void SetRandomTrajectory()
+    private void Update()
     {
-        Vector2 force = Vector2.zero;
-        force.x = Random.Range(-1f, 1f);
-        force.y = -1f;
+        if (Rigidbody.linearVelocity.magnitude < speed)
+        {
+            Rigidbody.linearVelocity = _velocity;
+        }
 
-        Rigidbody.AddForce(force.normalized * speed);
+        // If the ball falls below the screen, destroy it.
+        if (transform.position.y < -10)
+        {
+            Destroy(gameObject);
+        }
     }
+
+    // OnCollisionEnter2D is called when this collider/rigidbody has begun touching another rigidbody/collider.
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        // When the ball collides with a brick/wall, it should bounce off.
+        if (collision.gameObject.CompareTag("Brick") || collision.gameObject.CompareTag("Wall"))
+        {
+            _velocity = Vector2.Reflect(_velocity, collision.GetContact(0).normal);
+            Rigidbody.linearVelocity = _velocity;
+        }
+    }
+
 }
