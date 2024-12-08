@@ -42,7 +42,7 @@ public class Brick : MonoBehaviour
 
         if (Health <= 0)
         {
-            Destroy(gameObject);
+            gameObject.SetActive(false);
         }
         else
         {
@@ -59,5 +59,4 @@ public class Brick : MonoBehaviour
             TakeDamage();
         }
     }
-
 }

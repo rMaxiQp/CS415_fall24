@@ -50,4 +50,9 @@ public class Ball : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        GameManager.Instance.OnBallDestroyed();
+    }
+
 }

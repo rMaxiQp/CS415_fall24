@@ -1,18 +1,26 @@
+using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+    public TextMeshProUGUI ScoreText;
 
+    public int base_score = 200;
     public int score;
     public int level = 1;
 
+    public int ball_cost = 100;
+
 
     // The number of total levels in the game
-    private int NUM_LEVELS = 1;
+    private readonly int NUM_LEVELS = 2;
 
     private Brick[] bricks;
+    private Shooter shooter;
 
     private void Awake()
     {
@@ -24,18 +32,35 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            FindSceneBricks();
         }
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void Start()
     {
-        NewGame();
+        MainMenu();
     }
 
-    private void NewGame()
+    public void MainMenu()
     {
-        score = 0;
+        // HACK: hide the score text on the main menu
+        ScoreText.text = "";
+        SceneManager.LoadScene("Menu");
+    }
+
+    public void NewGame()
+    {
+        score = base_score;
+        ScoreText.text = "Score: " + score;
 
         LoadLevel(1);
     }
@@ -51,6 +76,8 @@ public class GameManager : MonoBehaviour
     public void OnBrickHit(Brick brick)
     {
         score += brick.points;
+        ScoreText.text = "Score: " + score;
+
 
         if (Cleared())
         {
@@ -71,14 +98,23 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene("Level" + level);
     }
 
-    private void FindSceneBricks()
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         bricks = FindObjectsByType<Brick>(FindObjectsSortMode.None);
+        shooter = FindFirstObjectByType<Shooter>();
     }
 
     private void CompleteLevel()
     {
-        // Implement me.
+        if (level < NUM_LEVELS)
+        {
+            LoadLevel(level + 1);
+        }
+        else
+        {
+            MainMenu();
+        }
+
     }
 
     private bool Cleared()
@@ -91,5 +127,39 @@ public class GameManager : MonoBehaviour
             }
         }
         return true;
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            MainMenu();
+        }
+        else if (SceneManager.GetActiveScene().name.StartsWith("Level") && Input.GetMouseButtonDown(0))
+        {
+            SpawnBall();
+        }
+    }
+
+    private void SpawnBall()
+    {
+        if (shooter == null || ball_cost > score)
+        {
+            return;
+        }
+
+        score -= ball_cost;
+        ScoreText.text = "Score: " + score;
+
+        shooter.SpawnBall();
+    }
+
+    public void OnBallDestroyed()
+    {
+        Ball[] balls = FindObjectsByType<Ball>(FindObjectsSortMode.None);
+        if (balls.Length == 0 && score < ball_cost)
+        {
+            MainMenu();
+        }
     }
 }
